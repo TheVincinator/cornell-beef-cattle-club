@@ -363,3 +363,19 @@ body {
   padding: 0 20px;
 }
 
+.calendar-container {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 1rem;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+}
+
+.calendar-embed {
+  width: 100%;
+  height: 600px;
+  border: none;
+  border-radius: 12px;
+}
+
