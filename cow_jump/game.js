@@ -22,6 +22,12 @@ const GAME_STATE = {
 
 const GROUND_Y = 344; // the y coordinate where objects sit on the ground
 
+// Arcade bitmap face, with a monospace fallback if Google Fonts is unreachable
+const RETRO_FONT = '"Press Start 2P", "Courier New", monospace';
+function retroFont(size) {
+    return `${size}px ${RETRO_FONT}`;
+}
+
 // Gameplay runs on a fixed 1/60s step so the game plays at the same speed on a
 // 60Hz and a 120Hz display; only the drawing happens once per animation frame.
 const STEP = 1 / 60;
@@ -104,36 +110,58 @@ function playMusic() {
 }
 
 // --- Buttons ---
-const startButton = new Button(320, 200, 160, 60, "Start", "28px Arial", "white",  "#4CAF50", () => {
+const startButton = new Button(320, 200, 160, 60, "START", retroFont(18), "white",  "#4CAF50", () => {
     playMusic();
     startCountdown();
     currentState = GAME_STATE.PLAYING;
   });
 
-  const pauseButton = new Button(canvas.width / 2 - 100, canvas.height / 2 - 10, 200, 60, "Resume", "28px Arial", "white",  "#4CAF50", () => {
+  const pauseButton = new Button(canvas.width / 2 - 100, canvas.height / 2 - 10, 200, 60, "RESUME", retroFont(18), "white",  "#4CAF50", () => {
     currentState = GAME_STATE.PLAYING;
     playMusic();
   });
 
-  const replayButton = new Button(canvas.width / 2 - 100, canvas.height / 2 + 40, 200, 60, "Replay", "28px Arial", "white",  "#4CAF50", () => {
+  const replayButton = new Button(canvas.width / 2 - 100, canvas.height / 2 + 40, 200, 60, "REPLAY", retroFont(18), "white",  "#4CAF50", () => {
     resetGame();
   });
 
 function drawStartScreen() {
-    ctx.fillStyle = "#87CEEB";
+    // The game world itself is the backdrop, dimmed to dusk so the title reads.
+    drawLayer(background, backgroundX);
+    drawLayer(foreground, foregroundX);
+    cow.draw(ctx);
+
+    ctx.fillStyle = "rgba(8, 4, 20, 0.62)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.fillStyle = "white";
-    ctx.font = "48px Arial";
-    ctx.textAlign = "center";
-    ctx.fillText("Big Red Run", canvas.width / 2, 150);
+    // Vignette, so attention falls on the middle of the screen
+    const vignette = ctx.createRadialGradient(canvas.width / 2, 200, 80,
+                                              canvas.width / 2, 200, 470);
+    vignette.addColorStop(0, "rgba(0, 0, 0, 0)");
+    vignette.addColorStop(1, "rgba(0, 0, 0, 0.75)");
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.font = "18px Arial";
-    ctx.fillText("Space to jump (twice for a double jump)  ·  P to pause  ·  M to mute",
-        canvas.width / 2, canvas.height - 40);
+    // Cornell-red marquee frame
+    ctx.strokeStyle = "#b31b1b";
+    ctx.lineWidth = 6;
+    ctx.strokeRect(26, 26, canvas.width - 52, canvas.height - 52);
 
-    // Draw buttons
+    drawBanner(104, 104);
+    drawOutlinedText("BIG RED RUN", canvas.width / 2, 150, retroFont(40));
+    drawOutlinedText("CORNELL BEEF CLUB", canvas.width / 2, 192, retroFont(13),
+                     "center", "#ffd97a");
+
     startButton.draw(ctx);
+
+    // Blinking prompt, the way a cabinet nags you for a coin
+    if (Math.floor(performance.now() / 450) % 2 === 0) {
+        drawOutlinedText("PRESS SPACE TO START", canvas.width / 2, 312, retroFont(13));
+    }
+    drawOutlinedText("SPACE JUMP  ·  P PAUSE  ·  M MUTE", canvas.width / 2, 348,
+                     retroFont(9), "center", "#cfd8e8");
+
+    drawScanlines(0.22);
     drawVolumeButton();
 }
 
@@ -336,6 +364,15 @@ function update(dt) {
     }
 }
 
+// The title card drifts slowly behind the menu, cow trotting on the spot, so the
+// screen looks alive rather than frozen.
+function updateAttract() {
+    backgroundX = advanceLayer(backgroundX, BACKGROUND_SPEED * 0.35);
+    foregroundX = advanceLayer(foregroundX, FOREGROUND_SPEED * 0.35);
+    cow.animationSwitch();
+    cow.increaseFrame();
+}
+
 function advanceLayer(x, speed) {
     x -= speed;
 
@@ -352,15 +389,34 @@ function advanceLayer(x, speed) {
 
 // Plain white text disappears against the sky, the hills and the club sign, so
 // everything drawn over the world gets a dark outline.
-function drawOutlinedText(text, x, y, font, align = "center") {
+function drawOutlinedText(text, x, y, font, align = "center", color = "white") {
     ctx.font = font;
     ctx.textAlign = align;
     ctx.lineJoin = "round";
     ctx.lineWidth = 6;
     ctx.strokeStyle = "rgba(0, 0, 0, 0.65)";
     ctx.strokeText(text, x, y);
-    ctx.fillStyle = "white";
+    ctx.fillStyle = color;
     ctx.fillText(text, x, y);
+}
+
+// A dark band behind heading text. The club sign scrolls through the backdrop
+// and its bright lettering competes with anything laid over it, so headings get
+// a guaranteed backing rather than relying on the outline alone.
+function drawBanner(top, height) {
+    ctx.fillStyle = "#160b06";
+    ctx.fillRect(29, top, canvas.width - 58, height);
+    ctx.fillStyle = "#b31b1b";
+    ctx.fillRect(29, top, canvas.width - 58, 4);
+    ctx.fillRect(29, top + height - 4, canvas.width - 58, 4);
+}
+
+// Horizontal CRT scanlines, drawn over a finished frame.
+function drawScanlines(alpha) {
+    ctx.fillStyle = `rgba(0, 0, 0, ${alpha})`;
+    for (let y = 0; y < canvas.height; y += 3) {
+        ctx.fillRect(0, y, canvas.width, 1);
+    }
 }
 
 function drawLayer(image, x) {
@@ -394,44 +450,56 @@ function drawGame() {
     }
 
     // Draw score in the top-left, clear of the club sign in the background art
-    drawOutlinedText("Score: " + currentScore, 25, 52, "40px Arial", "left");
+    drawOutlinedText("SCORE " + currentScore, 25, 52, retroFont(20), "left");
 }
 
 function drawCountdown() {
     const countdown = Math.ceil(gameStartDelay);
 
-    drawOutlinedText(countdown > 0 ? countdown : "GO!", canvas.width / 2, canvas.height / 2, "bold 72px Arial");
+    drawOutlinedText(countdown > 0 ? countdown : "GO!", canvas.width / 2, canvas.height / 2, retroFont(56));
+}
+
+// Dim, vignette, marquee frame and scanlines - the same dressing as the title
+// card, so the pause and game-over screens read as part of the same cabinet.
+function drawOverlayBackdrop() {
+    ctx.fillStyle = "rgba(8, 4, 20, 0.68)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const vignette = ctx.createRadialGradient(canvas.width / 2, 200, 80,
+                                              canvas.width / 2, 200, 470);
+    vignette.addColorStop(0, "rgba(0, 0, 0, 0)");
+    vignette.addColorStop(1, "rgba(0, 0, 0, 0.75)");
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.strokeStyle = "#b31b1b";
+    ctx.lineWidth = 6;
+    ctx.strokeRect(26, 26, canvas.width - 52, canvas.height - 52);
+
+    drawScanlines(0.22);
 }
 
 function drawPausedScreen() {
-    // Dim background
-    ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    drawOverlayBackdrop();
 
-    // "Game Paused" title
-    ctx.fillStyle = "white";
-    ctx.font = "bold 48px Arial";
-    ctx.textAlign = "center";
-    ctx.fillText("Game Paused", canvas.width / 2, canvas.height / 2 - 80);
+    // "PAUSED" title
+    drawBanner(88, 52);
+    drawOutlinedText("PAUSED", canvas.width / 2, canvas.height / 2 - 80, retroFont(32));
 
     // Resume button
     pauseButton.draw(ctx);
 }
 
 function drawGameOverScreen() {
-    // Dim background
-    ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    drawOverlayBackdrop();
 
     // Title
-    ctx.fillStyle = "white";
-    ctx.font = "bold 56px Arial";
-    ctx.textAlign = "center";
-    ctx.fillText("Game Over", canvas.width / 2, canvas.height / 2 - 80);
+    drawBanner(84, 112);
+    drawOutlinedText("GAME OVER", canvas.width / 2, canvas.height / 2 - 80, retroFont(34));
 
     // Final score
-    ctx.font = "32px Arial";
-    ctx.fillText("Final Score: " + currentScore, canvas.width / 2, canvas.height / 2 - 20);
+    drawOutlinedText("FINAL SCORE " + currentScore, canvas.width / 2,
+                     canvas.height / 2 - 24, retroFont(15), "center", "#ffd97a");
 
     // Replay button
     replayButton.draw(ctx);
@@ -476,6 +544,8 @@ function gameLoop(now) {
         stepAccumulator -= STEP;
         if (currentState === GAME_STATE.PLAYING) {
             update(STEP);
+        } else if (currentState === GAME_STATE.START) {
+            updateAttract();
         }
     }
 
@@ -485,7 +555,9 @@ function gameLoop(now) {
 
 // Start once the artwork is ready, but never hang if an image fails to load.
 const gameImages = [background, foreground, volumeOnButton, volumeOffButton, fence, hayStack, tractor, ...cow.images];
-let pendingImages = gameImages.length;
+// +1 for the webfont: starting before it arrives would draw one frame in the
+// fallback face and then visibly reflow.
+let pendingImages = gameImages.length + 1;
 let loopStarted = false;
 
 function startLoop() {
@@ -506,4 +578,10 @@ for (const image of gameImages) {
         image.addEventListener("load", imageSettled, { once: true });
         image.addEventListener("error", imageSettled, { once: true });
     }
+}
+
+if (document.fonts && document.fonts.load) {
+    document.fonts.load('16px "Press Start 2P"').then(imageSettled, imageSettled);
+} else {
+    imageSettled(); // very old browser: fall back to monospace immediately
 }
