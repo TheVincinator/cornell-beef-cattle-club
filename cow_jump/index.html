@@ -3,15 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Flappy Cow</title>
+  <title>Big Red Run | Cornell Beef Club</title>
   <style>
     body {
       margin: 0;
       background: #89c4f4;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
-      height: 100vh;
+      gap: 16px;
+      min-height: 100vh;
+      padding: 16px;
+      box-sizing: border-box;
+      font-family: "Inter", Arial, sans-serif;
     }
     canvas {
       image-rendering: pixelated;
@@ -23,10 +28,23 @@
       /* Let taps through to the game instead of scrolling the page. */
       touch-action: none;
     }
+    .back-link {
+      display: inline-block;
+      background-color: #b31b1b;
+      color: white;
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+    }
+    .back-link:hover {
+      background-color: #ef4035;
+    }
   </style>
 </head>
 <body>
   <canvas id="gameCanvas"></canvas>
+  <a class="back-link" href="../index.html">&larr; Back to Cornell Beef Club</a>
   <script src="button.js"></script>
   <script src="cow.js"></script>
   <script src="obstacle.js"></script>

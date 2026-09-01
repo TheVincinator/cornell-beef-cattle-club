@@ -126,7 +126,7 @@ function drawStartScreen() {
     ctx.fillStyle = "white";
     ctx.font = "48px Arial";
     ctx.textAlign = "center";
-    ctx.fillText("Flappy Cow", canvas.width / 2, 150);
+    ctx.fillText("Big Red Run", canvas.width / 2, 150);
 
     ctx.font = "18px Arial";
     ctx.fillText("Space to jump (twice for a double jump)  ·  P to pause  ·  M to mute",
