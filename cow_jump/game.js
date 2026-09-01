@@ -48,13 +48,54 @@ const hayImpact = new Audio("sound_effects/hay_impact.wav");
 const tractorImpact = new Audio("sound_effects/tractor_impact.wav");
 const cowSound = new Audio('sound_effects/cow_moo.wav');
 
+// A 4s loop cut from the middle of the full mowing recording. The original is a
+// 3-minute drive-by; the approach and fade are done here with volume instead, so
+// the engine tracks whichever tractor is actually on screen.
+const tractorMowing = new Audio("sound_effects/tractor_mowing_loop.wav");
+tractorMowing.loop = true;
+
 // Every sound in the game, so muting silences all of them and not just the music
-const ALL_AUDIO = [bluegrassMusic, fenceImpact, hayImpact, tractorImpact, cowSound, Cow.jumpSound];
+const ALL_AUDIO = [bluegrassMusic, fenceImpact, hayImpact, tractorImpact, cowSound,
+                   tractorMowing, Cow.jumpSound];
 
 function playSound(sound) {
     sound.currentTime = 0; // rewind so rapid repeats always retrigger
     const played = sound.play();
     if (played) played.catch(() => {}); // browser may block audio until first click
+}
+
+// --- Tractor engine ---
+// Audible once a tractor is within ENGINE_RANGE, loudest as it draws level with
+// the cow. Squaring the falloff keeps it faint until the tractor is genuinely
+// close rather than droning through the whole run.
+const ENGINE_RANGE = 620;
+const ENGINE_MAX_VOLUME = 0.55;
+
+function updateTractorEngine() {
+    let nearest = Infinity;
+
+    for (const obs of obstacles) {
+        if (obs.type !== "tractor") continue;
+        const gap = Math.abs((obs.x + obs.width / 2) - (cow.boxX + cow.boxW / 2));
+        if (gap < nearest) nearest = gap;
+    }
+
+    if (nearest > ENGINE_RANGE) {
+        stopTractorEngine();
+        return;
+    }
+
+    const closeness = 1 - nearest / ENGINE_RANGE;
+    tractorMowing.volume = ENGINE_MAX_VOLUME * closeness * closeness;
+
+    if (tractorMowing.paused) {
+        const played = tractorMowing.play();
+        if (played) played.catch(() => {});
+    }
+}
+
+function stopTractorEngine() {
+    if (!tractorMowing.paused) tractorMowing.pause();
 }
 
 function playMusic() {
@@ -199,6 +240,7 @@ document.addEventListener("keydown", (e) => {
         if (currentState === GAME_STATE.PLAYING) {
             currentState = GAME_STATE.PAUSED;
             bluegrassMusic.pause();
+            stopTractorEngine();
         } else if (currentState === GAME_STATE.PAUSED) {
             currentState = GAME_STATE.PLAYING;
             playMusic();
@@ -214,6 +256,7 @@ function startCountdown() {
 }
 
 function resetGame() {
+    stopTractorEngine();
     currentScore = 0;
     cow.reset();
     obstacles = [spawnObstacle()];
@@ -236,6 +279,7 @@ function endGame(obs) {
 
     playSound(cowSound);
     bluegrassMusic.pause();
+    stopTractorEngine();
     gameOverAge = 0;
     currentState = GAME_STATE.GAME_OVER;
 }
@@ -254,6 +298,8 @@ function update(dt) {
 
     backgroundX = advanceLayer(backgroundX, BACKGROUND_SPEED);
     foregroundX = advanceLayer(foregroundX, FOREGROUND_SPEED);
+
+    updateTractorEngine();
 
     // Cow physics and animation (switch frames every 10 ticks)
     cow.update();
