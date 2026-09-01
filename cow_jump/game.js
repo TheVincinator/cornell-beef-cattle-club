@@ -4,6 +4,12 @@ const ctx = canvas.getContext("2d");
 canvas.width = 800;
 canvas.height = 400;
 
+// Every sprite is pixel art scaled up by drawImage, which bilinear-filters by
+// default and turns the cow's 13 colours into ~390 muddy ones. The CSS
+// `image-rendering: pixelated` does not cover this - it only applies when the
+// canvas element itself is scaled - so the context has to be told directly.
+ctx.imageSmoothingEnabled = false;
+
 // --- CONSTANTS ---
 
 // --- Game States ---
@@ -312,9 +318,16 @@ function drawOutlinedText(text, x, y, font, align = "center") {
 }
 
 function drawLayer(image, x) {
+    // Snap to a whole pixel. The background creeps along at 1.5px per frame, and
+    // drawing on a half pixel makes nearest-neighbour resample ~a quarter of the
+    // columns differently every frame, which reads as a shimmer crawling across
+    // the hills. Position still accumulates fractionally, so the average speed
+    // is unchanged.
+    const ix = Math.round(x);
+
     // Draw two copies for seamless looping
-    ctx.drawImage(image, x, 0, canvas.width, canvas.height);
-    ctx.drawImage(image, x + canvas.width, 0, canvas.width, canvas.height);
+    ctx.drawImage(image, ix, 0, canvas.width, canvas.height);
+    ctx.drawImage(image, ix + canvas.width, 0, canvas.width, canvas.height);
 }
 
 function drawGame() {
@@ -324,7 +337,7 @@ function drawGame() {
 
     // Obstacles first so the cow passes in front of them
     for (const obs of obstacles) {
-        ctx.drawImage(obs.image, obs.x, obs.y, obs.width, obs.height);
+        ctx.drawImage(obs.image, Math.round(obs.x), Math.round(obs.y), obs.width, obs.height);
     }
 
     cow.draw(ctx);

@@ -3,3 +3,6 @@
 
 # Photoshop sources for the game art — the exported PNGs are what the site uses
 *.psd
+
+# Working art sources (piskel projects + exports) - not needed to run the site
+cow_jump/cow_game_assets/

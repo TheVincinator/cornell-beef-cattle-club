@@ -6,9 +6,8 @@ hayStack.src = "images/hay_stack.png"; // haystack obstacle
 const tractor = new Image();
 tractor.src = "images/tractor.png"; // tractor obstacle
 
-// Every sprite is pixel art blown up by the same factor as the cow. The tractor
-// used to be drawn at 5x while everything else was 3x, which made it a wall the
-// cow could not clear without a frame-perfect double jump.
+// Most sprites are pixel art blown up by the same factor as the cow. A type can
+// override `scale` to draw bigger — see the tractor.
 const SPRITE_SCALE = 3;
 
 // Sizes and hitbox insets are written in *source* pixels and scaled once below,
@@ -36,23 +35,33 @@ const OBSTACLE_TYPES = [
         type: "tractor",
         image: tractor,
         chance: 0.2,
-        srcWidth: 32,
-        srcHeight: 25,
-        inset: { left: 3, top: 7, right: 3, bottom: 0 }
+        // Deliberately the biggest obstacle: its hitbox stands 90px off the
+        // ground, taller than a single jump can carry the cow, so clearing it
+        // requires a double jump. Because it is drawn so large, its art is
+        // authored at full 160x125 rather than upscaled from a 32x25 sprite —
+        // hence scale 1, and insets already in drawn pixels.
+        srcWidth: 160,
+        srcHeight: 125,
+        inset: { left: 15, top: 35, right: 15, bottom: 0 },
+        scale: 1
     }
-].map((type) => ({
-    type: type.type,
-    image: type.image,
-    chance: type.chance,
-    width: type.srcWidth * SPRITE_SCALE,
-    height: type.srcHeight * SPRITE_SCALE,
-    hitbox: {
-        left: type.inset.left * SPRITE_SCALE,
-        top: type.inset.top * SPRITE_SCALE,
-        right: type.inset.right * SPRITE_SCALE,
-        bottom: type.inset.bottom * SPRITE_SCALE
-    }
-}));
+].map((type) => {
+    const scale = type.scale || SPRITE_SCALE;
+
+    return {
+        type: type.type,
+        image: type.image,
+        chance: type.chance,
+        width: type.srcWidth * scale,
+        height: type.srcHeight * scale,
+        hitbox: {
+            left: type.inset.left * scale,
+            top: type.inset.top * scale,
+            right: type.inset.right * scale,
+            bottom: type.inset.bottom * scale
+        }
+    };
+});
 
 // --- Random obstacle ---
 // `groundY` is the y coordinate the obstacle rests on; `spawnX` is the right edge

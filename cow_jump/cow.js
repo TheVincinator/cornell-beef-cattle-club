@@ -1,6 +1,12 @@
 class Cow {
     static jumpSound = new Audio("sound_effects/cow_jump.wav");
 
+    // Jump tuning. The first jump is strong enough to clear a fence or haystack
+    // on its own; the tractor's hitbox stands too tall for that, so it can only
+    // be cleared by spending the second jump as well.
+    static FIRST_JUMP_VELOCITY = -11;
+    static SECOND_JUMP_VELOCITY = -8;
+
     constructor(cow1ImageSrc, cow2ImageSrc, cowY, cowVel, gravity, jumps, frame, cowFrame, GROUND_Y) {
         const cow1Image = new Image();
         cow1Image.src = cow1ImageSrc; // first running frame
@@ -21,7 +27,9 @@ class Cow {
 
     draw(ctx) {
         const currentCow = this._cowFrame === 0 ? this.cow1Image : this.cow2Image;
-        ctx.drawImage(currentCow, this.boxX, this.cowY, this.boxW, this.boxH);
+        // Draw on whole pixels so the art keeps a stable pixel grid mid-jump;
+        // cowY itself stays fractional so the physics is unaffected.
+        ctx.drawImage(currentCow, this.boxX, Math.round(this.cowY), this.boxW, this.boxH);
     }
 
     jump() {
@@ -31,9 +39,9 @@ class Cow {
             if (played) played.catch(() => {}); // browser may block audio until first click
 
             if (this._jumps == 0) {
-                this.cowVel = -10;
+                this.cowVel = Cow.FIRST_JUMP_VELOCITY;
             } else {
-                this.cowVel = -8;
+                this.cowVel = Cow.SECOND_JUMP_VELOCITY;
             }
             this._jumps += 1;
         }
