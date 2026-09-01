@@ -117,6 +117,20 @@ body {
   line-height: 1.4;
 }
 
+.footer-section p a {
+  color: white;
+  text-decoration: underline;
+  transition: color 0.3s ease;
+}
+
+.footer-section p a:hover {
+  color: #f0a500;
+}
+
+.footer-section p.footer-legal {
+  margin-bottom: 16px;
+}
+
 .logo2 {
   height: 80px;
   margin-bottom: 15px;
