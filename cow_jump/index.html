@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Flappy Cow</title>
+  <style>
+    body {
+      margin: 0;
+      background: #89c4f4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    canvas {
+      image-rendering: pixelated;
+      border: 2px solid #333;
+      /* Shrink to fit narrow screens; pointer coords are scaled to match. */
+      width: 800px;
+      max-width: 100%;
+      height: auto;
+      /* Let taps through to the game instead of scrolling the page. */
+      touch-action: none;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+  <script src="button.js"></script>
+  <script src="cow.js"></script>
+  <script src="obstacle.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

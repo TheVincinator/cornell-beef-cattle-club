@@ -1,0 +1,5 @@
+# macOS Finder metadata
+.DS_Store
+
+# Photoshop sources for the game art — the exported PNGs are what the site uses
+*.psd
